@@ -9,6 +9,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status
+from itsdangerous import URLSafeTimedSerializer
 
 User = get_user_model()
 
@@ -36,7 +37,6 @@ class RegisterView(generics.CreateAPIView):
             fail_silently=False
         )
 
-
 class VerifyEmailView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -51,6 +51,55 @@ class VerifyEmailView(APIView):
             return Response({"message":"Email verified sucessfully!"}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        if not email:
+            return Response({"error":"Email is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({"error":"User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
+        token = serializer.dumps(user.email, salt= 'password-reset-salt')
+        reset_link = f"http://127.0.0.1:8000/api/v1/password-reset/{token}/" 
+
+
+        send_mail(
+            subject="Reset your password",
+            message=f"click the link to reset your passwrod:{reset_link}",
+            from_email="webmaster@localhost",
+            recipient_list=[user.email]
+        )
+
+        return Response({"message":"Password reset link sent to email"})
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request, token):
+        serializer = URLSafeTimedSerializer(settings.SECRET_KEY)
+        try:
+            email = serializer.loads(token, salt='password-reset-salt', max_age=3600)
+        except Exception:
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+
+        new_password = request.data.get("password")
+        if not new_password:
+            return Response({"error": "Password is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = User.objects.get(email=email)
+            user.set_password(new_password)
+            user.save()
+            return Response({"message": "Password reset successful"}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class =UserSerializer

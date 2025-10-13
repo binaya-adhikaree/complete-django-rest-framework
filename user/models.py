@@ -4,6 +4,7 @@ from django.contrib.auth.models import AbstractUser,BaseUserManager
 
 # Create your models here.
 class UserManager(BaseUserManager):
+
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("Email is required")
@@ -19,8 +20,6 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault("is_admin", True)
         return self.create_user(email, password, **extra_fields)
     
-
-
 
 class User(AbstractUser):
     username = None
