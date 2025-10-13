@@ -58,8 +58,8 @@ Installation
 
 Clone the repository:
 
-git clone 
-cd <project-folder>
+git clone https://github.com/binaya-adhikaree/complete-django-rest-framework.git
+cd folder name where you have cloned this repo
 
 
 Create a virtual environment and activate it:
