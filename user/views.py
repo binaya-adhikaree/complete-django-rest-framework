@@ -101,9 +101,29 @@ class PasswordResetConfirmView(APIView):
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
+class ChangePasswordView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+
+    def post(self,request):
+        serializer = ChangePasswordSerailizer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            old_password = serializer.validated_data.get("old_password")
+            new_password = serializer.validated_data.get("new_password")
+ 
+            if not user.check_password(old_password):
+                return Response({"error":"old password is incorrect"}, status=status.HTTP_400_BAD_REQUEST)
+            
+            user.set_password(new_password)
+            user.save()
+            return Response({"error":"password changed sucessfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class =UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
 
     def get_object(self):
         return self.request.user
