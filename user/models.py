@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractUser,BaseUserManager
 # Create your models here.
 class UserManager(BaseUserManager):
 
-    def create_user(self, email, password=None, **extra_fields):
+    def create_user(self, email,username=None, password=None, **extra_fields):
         if not email:
             raise ValueError("Email is required")
         
@@ -15,14 +15,14 @@ class UserManager(BaseUserManager):
         user.save(using=self._db)
         return user
     
-    def create_superuser(self, email, password=None, **extra_fields):
+    def create_superuser(self, email,username=None, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_admin", True)
         return self.create_user(email, password, **extra_fields)
     
 
 class User(AbstractUser):
-    username = None
+    username = models.CharField(max_length=225, default="default_user")
     email = models.EmailField(unique=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     email_verified = models.BooleanField(default=True)
