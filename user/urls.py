@@ -1,16 +1,32 @@
-from django.urls import path
-from .views import RegisterView, UserProfileView, LogoutView,VerifyEmailView,PasswordResetRequestView,PasswordResetConfirmView,ChangePasswordView
+from django.urls import path,include
+from .views import RegisterView, UserProfileView, LogoutView,VerifyEmailView,PasswordResetRequestView,PasswordResetConfirmView,ChangePasswordView,SocialLoinSucess
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 urlpatterns = [
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('profile/', UserProfileView.as_view(), name='user_profile'),
-    path('logout/', LogoutView.as_view(), name='logout'),
-    path("verify-email/", VerifyEmailView.as_view(), name="verify-email"),
-    path("password-reset/", PasswordResetRequestView.as_view(), name="password-reset" ),
-    path('password-reset/<str:token>/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
-    path('change-password/', ChangePasswordView.as_view(), name='change-password'),
+    path('api/v1/register/', RegisterView.as_view(), name='register'),
+    path('api/v1/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/v1/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/v1/profile/', UserProfileView.as_view(), name='user_profile'),
+    path('api/v1/logout/', LogoutView.as_view(), name='logout'),
+    path("api/v1/verify-email/", VerifyEmailView.as_view(), name="verify-email"),
+    path("api/v1/password-reset/", PasswordResetRequestView.as_view(), name="password-reset" ),
+    path('api/v1/password-reset/<str:token>/', PasswordResetConfirmView.as_view(), name='password-reset-confirm'),
+    path('api/v1/change-password/', ChangePasswordView.as_view(), name='change-password'),
+
+
+
+    path("api/v1/auth/", include("dj_rest_auth.urls")),
+    path("api/v1/auth/registration/", include("dj_rest_auth.registration.urls")),
+
+    # allauth endpoints
+    path("api/v1/auth/", include("allauth.urls")),
+    path("api/v1/auth/social/", include("allauth.socialaccount.urls")),
+
+    # Social login success view
+    path("auth/social/login/success/", SocialLoinSucess.as_view(), name="social-login-success"),
+
+
+    #  for password reset
+     path('api/v1/auth/', include('django.contrib.auth.urls')),
 ]
 

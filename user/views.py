@@ -140,3 +140,6 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=400)
         
+class SocialLoinSucess(APIView):
+    def get(self,request):
+        return Response({"message":"login sucessul"})
