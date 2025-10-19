@@ -10,6 +10,9 @@ from django.conf import settings
 from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework import status
 from itsdangerous import URLSafeTimedSerializer
+from rest_framework.authentication import SessionAuthentication 
+from django.contrib.auth import logout
+from .serializers import LoginSerializer
 
 User = get_user_model()
 
@@ -36,6 +39,26 @@ class RegisterView(generics.CreateAPIView):
             [user.email],
             fail_silently=False
         )
+
+class LoginView(generics.GenericAPIView):
+
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception= True)
+        user= serializer.validated_data["user"]
+
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "user":{
+                "email":user.email,
+                "username":user.username
+            },
+            "refresh":str(refresh),
+            "access":str(refresh.access_token)
+        }) 
+    
 
 class VerifyEmailView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -129,17 +152,39 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
         return self.request.user
     
 class LogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
+    permission_classes = [permissions.AllowAny]
+    
     def post(self, request):
-        try:
-            refresh_token = request.data['refresh']
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response({"success": "logged out"})
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
+        logout(request) 
+        return Response({
+            "message": "Successfully logged out"
+        }, status=status.HTTP_200_OK)
+    
+    def get(self, request):
+        logout(request) 
+        return Response({
+            "message": "Successfully logged out"
+        }, status=status.HTTP_200_OK)
+
+class SocialLoginSuccess(APIView):
+    permission_classes = [permissions.AllowAny]  
+
+    def get(self,request, *args, **kwargs):
+        user = request.user
+
+        if user.is_anonymous:
+            return Response({
+                "error":"user is not authenticated"
+            },
+            status=status.HTTP_401_UNAUTHORIZED
+            )
         
-class SocialLoinSucess(APIView):
-    def get(self,request):
-        return Response({"message":"login sucessul"})
+        refresh = RefreshToken.for_user(user)
+        return Response({
+            "user":{
+                "email":user.email,
+                "username":user.username
+            },
+            "refresh":str(refresh),
+            "access":str(refresh.access_token)
+        }) 

@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from decouple import config
+from datetime import timedelta
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -53,24 +55,26 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.facebook',
+
+
 
     # Local apps
     'user',
 ]
-
 
 SITE_ID = 1
 
 AUTH_USER_MODEL = 'user.CustomUser'
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ],
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticated',
-    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        'rest_framework.authentication.SessionAuthentication',
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    )
 }
+
+REST_USE_JWT = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' 
 
@@ -136,7 +140,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
@@ -161,20 +164,40 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 
+LOGIN_REDIRECT_URL = "http://127.0.0.1:8000/auth/social/login/success/"
+LOGOUT_REDIRECT_URL = "http://127.0.0.1:8000/api/v1/logout"
 
-LOGIN_REDIRECT_URL = "http://127.0.0.1:8000/api/v1/auth/social/login/success/"
-LOGOUT_REDIRECT_URL = "http://127.0.0.1:8000/api/v1/auth/social/logout/"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'http' 
 
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_AUTHENTICATION_METHOD = 'email'
 
+SOCIALACCOUNT_AUTO_SIGNUP = True
+SOCIALACCOUNT_EMAIL_VERIFICATION = 'none'
+SOCIALACCOUNT_QUERY_EMAIL = True
+
 SOCIALACCOUNT_PROVIDERS = {
     'google': {
-        'APP': {
+        'APP': { 
             'client_id': config('GOOGLE_CLIENT_ID'),
             'secret': config('GOOGLE_CLIENT_SECRET'),
             'key': ''
-        }
-    }
+        },
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+            'prompt': 'select_account',  # Add this line - forces account picker
+        },
+        'VERIFIED_EMAIL': True,
+    },
+}
+
+SIMPLE_JWT = {
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
